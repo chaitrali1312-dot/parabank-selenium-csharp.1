@@ -1,0 +1,140 @@
+//LoginPage
+using OpenQA.Selenium;
+using Utilities;
+
+namespace Pages
+{
+    public class LoginPage
+    {
+        private IWebDriver driver;
+        private WaitHelper wait;
+
+        public LoginPage(IWebDriver driver)
+        {
+            this.driver = driver;
+            wait = new WaitHelper(driver);
+        }
+
+        private By username = By.Name("username");
+        private By password = By.Name("password");
+        private By loginBtn = By.CssSelector("input[value='Log In']");
+        private By errorMsg = By.ClassName("error");
+        private By logoutLink = By.LinkText("Log Out");
+
+        public void Navigate()
+        {
+            driver.Navigate().GoToUrl("https://parabank.parasoft.com/");
+        }
+
+        public void Login(string user, string pass)
+        {
+            wait.WaitForElement(username).SendKeys(user);
+            driver.FindElement(password).SendKeys(pass);
+            driver.FindElement(loginBtn).Click();
+        }
+
+        public bool IsLoginSuccessful()
+        {
+            return wait.WaitForElement(logoutLink).Displayed;
+        }
+
+        public bool IsErrorDisplayed()
+        {
+            return wait.WaitForElement(errorMsg).Displayed;
+        }
+    }
+}
+//LoginTests.cs
+using NUnit.Framework;
+using OpenQA.Selenium;
+using Pages;
+using Utilities;
+
+namespace Tests
+{
+    [Parallelizable(ParallelScope.All)]
+    public class LoginTests
+    {
+        private IWebDriver driver;
+        private LoginPage loginPage;
+
+        [SetUp]
+        public void Setup()
+        {
+            driver = DriverFactory.GetDriver();
+            loginPage = new LoginPage(driver);
+            loginPage.Navigate();
+        }
+
+        [Test]
+        public void Login_WithValidCredentials_ShouldSucceed()
+        {
+            loginPage.Login("john", "demo");
+
+            Assert.IsTrue(loginPage.IsLoginSuccessful());
+        }
+
+        [Test]
+        public void Login_WithInvalidCredentials_ShouldFail()
+        {
+            loginPage.Login("wrong", "wrong");
+
+            Assert.IsTrue(loginPage.IsErrorDisplayed());
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            driver.Quit();
+        }
+    }
+}
+//Screenshot Utility
+using OpenQA.Selenium;
+using System;
+using System.IO;
+
+namespace Utilities
+{
+    public class ScreenshotHelper
+    {
+        public static void Capture(IWebDriver driver, string testName)
+        {
+            ITakesScreenshot ts = (ITakesScreenshot)driver;
+            var screenshot = ts.GetScreenshot();
+
+            string path = Path.Combine(Directory.GetCurrentDirectory(),
+                "Screenshots", testName + "_" + DateTime.Now.Ticks + ".png");
+
+            Directory.CreateDirectory("Screenshots");
+            screenshot.SaveAsFile(path);
+        }
+    }
+}
+//Use Screenshot on failure
+[TearDown]
+public void TearDown()
+{
+    if (TestContext.CurrentContext.Result.Outcome.Status == NUnit.Framework.Interfaces.TestStatus.Failed)
+    {
+        ScreenshotHelper.Capture(driver, TestContext.CurrentContext.Test.Name);
+    }
+
+    driver.Quit();
+}
+//Logging 
+using System;
+using System.IO;
+
+namespace Utilities
+{
+    public class Logger
+    {
+        public static void Log(string message)
+        {
+            File.AppendAllText("log.txt",
+                DateTime.Now + " : " + message + Environment.NewLine);
+        }
+    }
+}
+
