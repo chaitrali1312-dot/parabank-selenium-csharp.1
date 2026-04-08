@@ -1,0 +1,209 @@
+a) Config/appsettings.json
+{
+  "BaseUrl": "https://parabank.parasoft.com/",
+  "ValidUser": {
+    "Username": "john",
+    "Password": "demo"
+  },
+  "Timeout": 10
+}
+
+b) Drivers/DriverFactory.cs
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
+
+namespace Drivers
+{
+    public class DriverFactory
+    {
+        public static IWebDriver InitDriver()
+        {
+            ChromeOptions options = new ChromeOptions();
+            options.AddArgument("start-maximized");
+            IWebDriver driver = new ChromeDriver(options);
+            return driver;
+        }
+    }
+}
+
+c) Pages/LoginPage.cs
+using OpenQA.Selenium;
+using Utilities;
+
+namespace Pages
+{
+    public class LoginPage
+    {
+        private IWebDriver driver;
+
+        public LoginPage(IWebDriver driver) => this.driver = driver;
+
+        private IWebElement Username => driver.FindElement(By.Name("username"));
+        private IWebElement Password => driver.FindElement(By.Name("password"));
+        private IWebElement LoginButton => driver.FindElement(By.XPath("//input[@value='Log In']"));
+        private IWebElement ErrorMessage => driver.FindElement(By.CssSelector(".error"));
+
+        public void EnterUsername(string username) => Username.SendKeys(username);
+        public void EnterPassword(string password) => Password.SendKeys(password);
+        public void ClickLogin() => LoginButton.Click();
+        public string GetErrorMessage() => ErrorMessage.Text;
+    }
+}
+
+d) Pages/RegistrationPage.cs
+using OpenQA.Selenium;
+
+namespace Pages
+{
+    public class RegistrationPage
+    {
+        private IWebDriver driver;
+
+        public RegistrationPage(IWebDriver driver) => this.driver = driver;
+
+        private IWebElement FirstName => driver.FindElement(By.Id("customer.firstName"));
+        private IWebElement LastName => driver.FindElement(By.Id("customer.lastName"));
+        private IWebElement Username => driver.FindElement(By.Id("customer.username"));
+        private IWebElement Password => driver.FindElement(By.Id("customer.password"));
+        private IWebElement ConfirmPassword => driver.FindElement(By.Id("repeatedPassword"));
+        private IWebElement RegisterButton => driver.FindElement(By.XPath("//input[@value='Register']"));
+
+        public void EnterFirstName(string firstName) => FirstName.SendKeys(firstName);
+        public void EnterLastName(string lastName) => LastName.SendKeys(lastName);
+        public void EnterUsername(string username) => Username.SendKeys(username);
+        public void EnterPassword(string password) => Password.SendKeys(password);
+        public void EnterConfirmPassword(string password) => ConfirmPassword.SendKeys(password);
+        public void ClickRegister() => RegisterButton.Click();
+    }
+}
+
+e) Utilities/WaitHelper.cs
+using OpenQA.Selenium;
+using OpenQA.Selenium.Support.UI;
+using System;
+
+namespace Utilities
+{
+    public class WaitHelper
+    {
+        public static void WaitForElement(IWebDriver driver, By by, int timeout = 10)
+        {
+            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(timeout));
+            wait.Until(drv => drv.FindElement(by).Displayed);
+        }
+    }
+}
+
+f) Utilities/ScreenshotHelper.cs
+using OpenQA.Selenium;
+using System;
+using System.IO;
+
+namespace Utilities
+{
+    public class ScreenshotHelper
+    {
+        public static void CaptureScreenshot(IWebDriver driver, string testName)
+        {
+            Screenshot ss = ((ITakesScreenshot)driver).GetScreenshot();
+            string path = Path.Combine(Directory.GetCurrentDirectory(), "Screenshots", $"{testName}_{DateTime.Now:yyyyMMdd_HHmmss}.png");
+            ss.SaveAsFile(path, ScreenshotImageFormat.Png);
+        }
+    }
+}
+
+g) Tests/LoginTests.cs
+using NUnit.Framework;
+using OpenQA.Selenium;
+using Drivers;
+using Pages;
+using Utilities;
+
+namespace Tests
+{
+    [TestFixture]
+    public class LoginTests
+    {
+        IWebDriver driver;
+        LoginPage loginPage;
+
+        [SetUp]
+        public void Setup()
+        {
+            driver = DriverFactory.InitDriver();
+            driver.Navigate().GoToUrl("https://parabank.parasoft.com/");
+            loginPage = new LoginPage(driver);
+        }
+
+        [Test]
+        public void ValidLoginTest()
+        {
+            loginPage.EnterUsername("john");
+            loginPage.EnterPassword("demo");
+            loginPage.ClickLogin();
+            Assert.IsTrue(driver.Url.Contains("overview"), "Login failed for valid user.");
+        }
+
+        [Test]
+        public void InvalidLoginTest()
+        {
+            loginPage.EnterUsername("invalid");
+            loginPage.EnterPassword("wrong");
+            loginPage.ClickLogin();
+            Assert.IsTrue(loginPage.GetErrorMessage().Contains("The username and password could not be verified"));
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            ScreenshotHelper.CaptureScreenshot(driver, TestContext.CurrentContext.Test.Name);
+            driver.Quit();
+        }
+    }
+}
+
+h) Tests/RegistrationTests.cs
+using NUnit.Framework;
+using OpenQA.Selenium;
+using Drivers;
+using Pages;
+using Utilities;
+
+namespace Tests
+{
+    [TestFixture]
+    public class RegistrationTests
+    {
+        IWebDriver driver;
+        RegistrationPage regPage;
+
+        [SetUp]
+        public void Setup()
+        {
+            driver = DriverFactory.InitDriver();
+            driver.Navigate().GoToUrl("https://parabank.parasoft.com/register.htm");
+            regPage = new RegistrationPage(driver);
+        }
+
+        [Test]
+        public void RegisterNewUserTest()
+        {
+            string uniqueUser = $"user{Guid.NewGuid().ToString().Substring(0, 8)}";
+            regPage.EnterFirstName("John");
+            regPage.EnterLastName("Doe");
+            regPage.EnterUsername(uniqueUser);
+            regPage.EnterPassword("Password123");
+            regPage.EnterConfirmPassword("Password123");
+            regPage.ClickRegister();
+
+            Assert.IsTrue(driver.PageSource.Contains("Your account was created successfully"), "Registration failed.");
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            ScreenshotHelper.CaptureScreenshot(driver, TestContext.CurrentContext.Test.Name);
+            driver.Quit();
+        }
+    }
+}
