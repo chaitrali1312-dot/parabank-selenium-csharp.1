@@ -1,0 +1,94 @@
+# Parabank Automation – Test Strategy
+
+## 1. Application Under Test (AUT)
+- Web application: :contentReference[oaicite:0]{index=0}  
+- Core flows in scope: **Login** and **Registration**.
+
+---
+
+## 2. Scope
+**In Scope:**
+- Automate Login and Registration flows.  
+- Input validation, positive and negative scenarios.  
+- Verification of successful and unsuccessful login/registration.
+
+**Out of Scope:**
+- Backend/database testing.  
+- Performance, security, and API testing.  
+- Non-functional testing.
+
+---
+
+## 3. Test Levels
+- **Unit Testing:** Helper utilities (WaitHelper, DriverFactory).  
+- **UI Testing:** End-to-end validation of login and registration.  
+- **Regression Testing:** Re-running key tests after changes in AUT.
+
+---
+
+## 4. Test Types
+- Functional Testing: Features work as expected.  
+- Negative Testing: Empty fields, invalid inputs, duplicate usernames.  
+- Validation Testing: Error messages and success messages verification.  
+- Smoke Testing: Quick verification after builds.
+
+---
+
+## 5. Automation Approach
+- **Framework:** C#, Selenium WebDriver, NUnit.  
+- **Design Pattern:** Page Object Model (POM).  
+- **Synchronization:** Explicit waits using WaitHelper.  
+- **Test Data:** Dynamic usernames, static passwords.  
+- **Logging:** Logger utility captures execution steps.  
+- **Reporting:** ExtentReports generates professional HTML reports.  
+- **Screenshots:** Captured automatically on failures.
+
+---
+
+## 6. Risks
+- UI changes breaking locators.  
+- Duplicate username errors due to static test data.  
+- Flaky tests due to network or page load issues.  
+- Browser version compatibility.
+
+---
+
+## 7. Assumptions
+- Application is stable and accessible.  
+- Chrome browser installed and supported.  
+- Test environment mirrors production functionality.  
+- No CAPTCHA or bot detection interfering with Selenium.
+
+---
+
+## 8. Test Data Strategy
+- Dynamic usernames using GUID for registration.  
+- Static passwords for simplicity.  
+- Invalid credentials for login negative scenarios.  
+- Test data stored in code or JSON config for maintainability.
+
+---
+
+## 9. Execution Strategy
+- Tests executed via NUnit.  
+- Parallel execution enabled to reduce runtime.  
+- Screenshots captured for failures.  
+- Reports generated via ExtentReports.  
+- Logs maintained for traceability and debugging.
+
+---
+
+## 10. Deliverables
+- Automation framework (C# + Selenium).  
+- Test scripts for Login and Registration.  
+- TestStrategy.md document.  
+- README.md with setup and execution instructions.  
+- GitHub repository link.  
+- HTML reports and screenshots.
+
+---
+
+## 11. Summary
+This framework is robust, maintainable, and scalable**, following enterprise QA best practices.  
+- Config-driven, data-driven, and reusable.  
+- Supports logging, screenshots, parallel execution, and professional reporting.
